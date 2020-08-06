@@ -47,9 +47,9 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     public void userSignUp(){
 
         final String email = emailText.getText().toString();
-        String username = usernameText.getText().toString();
-        String phNum = numberText.getText().toString();
-        String password = passwordText.getText().toString();
+        final String username = usernameText.getText().toString();
+        final String phNum = numberText.getText().toString();
+        final String password = passwordText.getText().toString();
 
         // Validation
         if(email.isEmpty()){
@@ -86,19 +86,28 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             return;
         }
 
-        SignUpData user = new SignUpData(username, phNum, email, password);
-
-        // checking if the user already exists
         databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                boolean found = true;
                 for(DataSnapshot dataSnapshot : snapshot.getChildren()){
                     SignUpData user = dataSnapshot.getValue(SignUpData.class);
+
+                    //checking if user already exists
                     if(user != null && user.get_email().equals(email)){
+                        found = false;
                         clearFields();
-                        Toast.makeText(getApplicationContext(), "e-mail already exists", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "e-mail already exists try to login", Toast.LENGTH_SHORT).show();
                         return ;
                     }
+                }
+                if(found){
+                    finish();
+                    SignUpData user = new SignUpData(username, phNum, email, password);
+                    databaseReference.child(email.replace(".","")).setValue(user);
+                    clearFields();
+                    Toast.makeText(getApplicationContext(), "Registered", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(RegisterActivity.this, MainActivity.class));
                 }
             }
 
@@ -106,11 +115,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             public void onCancelled(@NonNull DatabaseError error) {
             }
         });
-
-        databaseReference.child(email.replace(".","")).setValue(user);
-        clearFields();
-        Toast.makeText(getApplicationContext(), "Registered", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(this, MainActivity.class));
     }
     private void generateSudoPassword() {
         final String email = emailText.getText().toString();
